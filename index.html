@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Calculadora de Derivadas</title>
+<title>Calculadora de Derivadas Mejorada</title>
 <style>
+  /* Igual que antes, estilo limpio */
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     max-width: 720px;
@@ -77,7 +78,7 @@
 </head>
 <body>
 
-<h1>Calculadora de Derivadas</h1>
+<h1>Calculadora de Derivadas Mejorada</h1>
 
 <label for="funcion">Introduce una función en <code>x</code> (ejemplo: <code>x^2 + sqrt(x) + 1/x</code>):</label>
 <textarea id="funcion" placeholder="Escribe tu función aquí..."></textarea>
@@ -106,6 +107,18 @@
   const calcularBtn = document.getElementById('calcularBtn');
   const ctx = document.getElementById('grafica').getContext('2d');
   let chartInstance = null;
+
+  // Normaliza la expresión para nerdamer
+  function normalizarEntrada(expr) {
+    return expr
+      .replace(/ln/g, 'log')       // ln() → log()
+      .replace(/√/g, 'sqrt')       // símbolo raíz √ → sqrt()
+      .replace(/(\d)([a-zA-Z])/g, '$1*$2') // Ej: 2x → 2*x
+      .replace(/([a-zA-Z])(\d)/g, '$1*$2') // Ej: x2 → x*2 (opcional)
+      .replace(/--/g, '+');        // -- → +
+
+    // Puedes agregar más reemplazos si quieres facilitar más la escritura
+  }
 
   function limpiarSalida() {
     resultadoDiv.textContent = '';
@@ -228,11 +241,13 @@
   function calcularDerivada() {
     limpiarSalida();
 
-    const expr = funcionInput.value.trim();
+    let expr = funcionInput.value.trim();
     if (!expr) {
       resultadoDiv.textContent = 'Por favor, ingresa una función.';
       return;
     }
+
+    expr = normalizarEntrada(expr);
 
     try {
       const funcion = nerdamer(expr);
