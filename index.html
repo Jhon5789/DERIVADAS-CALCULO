@@ -17,15 +17,18 @@
 </head>
 <body>
   <h1>Calculadora de Derivadas con Procedimiento Paso a Paso</h1>
-  <label for="funcion">Ingresa una función (usa x como variable):</label>
+  <label for="funcion">Introduce una función (usa x como variable):</label>
   <textarea id="funcion" placeholder="Ej: x^2 + sqrt(x) + 1/x"></textarea>
   <button onclick="calcular()">Calcular derivada</button>
 
   <h2>Resultado Final:</h2>
   <pre id="resultado"></pre>
 
-  <h2>Procedimiento Paso a Paso:</h2>
-  <pre id="pasos"></pre>
+  <h2>Procedimiento Corto (Reglas aplicadas):</h2>
+  <pre id="procCorto"></pre>
+
+  <h2>Procedimiento Largo (Desarrollo simbólico):</h2>
+  <pre id="procLargo"></pre>
 
   <h2>Gráfica:</h2>
   <canvas id="grafico"></canvas>
@@ -39,36 +42,46 @@
         .replace(/([a-zA-Z])([0-9])/g, '$1*$2');
     }
 
-    function pasoPaso(expr) {
-      let pasos = [];
+    function obtenerReglas(expr) {
+      let reglas = [];
       if (expr.includes('+') || expr.includes('-')) {
-        pasos.push('Aplicamos la regla de suma/resta: (f ± g)' = f' ± g'');
+        reglas.push('Regla de la suma/resta: (f ± g)' = f' ± g'');
       }
       if (expr.includes('sqrt')) {
-        pasos.push('Aplicamos la derivada de la raíz: d/dx(sqrt(x)) = 1/(2*sqrt(x))');
+        reglas.push('Derivada de la raíz: d/dx(sqrt(x)) = 1 / (2*sqrt(x))');
       }
       if (expr.includes('/')) {
-        pasos.push('Aplicamos la regla del cociente: (f/g)' = (f'g - fg') / g^2');
+        reglas.push('Regla del cociente: (f/g)' = (f'g - fg') / g^2');
       }
-      if (expr.match(/x\^\d/)) {
-        pasos.push('Aplicamos la regla de la potencia: d/dx(x^n) = n*x^(n-1)');
+      if (expr.match(/x\^\d+/)) {
+        reglas.push('Regla de la potencia: d/dx(x^n) = n*x^(n-1)');
       }
       if (expr.includes('log')) {
-        pasos.push('Aplicamos la derivada del logaritmo: d/dx(log(x)) = 1/x');
+        reglas.push('Regla del logaritmo: d/dx(log(x)) = 1/x');
       }
       if (expr.includes('sin') || expr.includes('cos') || expr.includes('tan')) {
-        pasos.push('Aplicamos la derivada trigonométrica correspondiente');
+        reglas.push('Regla trigonométrica (sin, cos, etc.)');
       }
-      return pasos.join("\n");
+      return reglas.join("\n");
     }
 
     function calcular() {
       const input = document.getElementById('funcion').value;
       const expr = normalizar(input);
-      const derivada = nerdamer.diff(expr, 'x').expand().toString();
-      document.getElementById('resultado').textContent = derivada;
-      document.getElementById('pasos').textContent = pasoPaso(expr);
-      graficar(expr, derivada);
+      try {
+        const derivada = nerdamer.diff(expr, 'x');
+        const expandida = derivada.expand().toString();
+
+        document.getElementById('resultado').textContent = expandida;
+        document.getElementById('procCorto').textContent = obtenerReglas(expr);
+        document.getElementById('procLargo').textContent = derivada.toString();
+
+        graficar(expr, expandida);
+      } catch (e) {
+        document.getElementById('resultado').textContent = 'Error: Verifica la función ingresada.';
+        document.getElementById('procCorto').textContent = '';
+        document.getElementById('procLargo').textContent = '';
+      }
     }
 
     function graficar(fx, dfx) {
@@ -79,12 +92,8 @@
       const df = nerdamer(dfx).buildFunction(['x']);
       for (let x = -10; x <= 10; x += 0.2) {
         labels.push(x.toFixed(1));
-        try {
-          datosFx.push(f(x));
-        } catch { datosFx.push(null); }
-        try {
-          datosDfx.push(df(x));
-        } catch { datosDfx.push(null); }
+        try { datosFx.push(f(x)); } catch { datosFx.push(null); }
+        try { datosDfx.push(df(x)); } catch { datosDfx.push(null); }
       }
       const ctx = document.getElementById('grafico').getContext('2d');
       if (window.chart) window.chart.destroy();
