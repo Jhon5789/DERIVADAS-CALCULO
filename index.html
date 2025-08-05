@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calculadora de Derivadas</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 720px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    background: #f9f9f9;
+    color: #222;
+  }
+  h1, h2 {
+    text-align: center;
+    color: #0a47a1;
+  }
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  textarea {
+    width: 100%;
+    height: 60px;
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    resize: vertical;
+  }
+  button {
+    display: block;
+    margin: 1rem auto;
+    padding: 0.7rem 2rem;
+    font-size: 1.1rem;
+    background-color: #0a47a1;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: #073a7a;
+  }
+  #resultado, #procedimiento {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgb(0 0 0 / 0.1);
+    padding: 1rem;
+    white-space: pre-wrap;
+    font-family: Consolas, monospace;
+    margin-top: 1rem;
+    min-height: 80px;
+  }
+  canvas {
+    margin-top: 1.5rem;
+    width: 100% !important;
+    max-height: 400px;
+  }
+  footer {
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+  }
+  code {
+    background-color: #eee;
+    padding: 0 4px;
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+  }
+</style>
+</head>
+<body>
+
+<h1>Calculadora de Derivadas</h1>
+
+<label for="funcion">Introduce una función en <code>x</code> (ejemplo: <code>x^2 + sqrt(x) + 1/x</code>):</label>
+<textarea id="funcion" placeholder="Escribe tu función aquí..."></textarea>
+
+<button id="calcularBtn">Calcular derivada</button>
+
+<h2>Derivada Resultante</h2>
+<div id="resultado">La derivada aparecerá aquí...</div>
+
+<h2>Procedimiento simplificado</h2>
+<div id="procedimiento">Aquí se mostrará el procedimiento...</div>
+
+<h2>Gráfica</h2>
+<canvas id="grafica"></canvas>
+
+<footer>Creado con ❤️ usando <a href="https://nerdamer.com/" target="_blank" rel="noopener">Nerdamer</a> y <a href="https://www.chartjs.org/" target="_blank" rel="noopener">Chart.js</a></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+(() => {
+  const funcionInput = document.getElementById('funcion');
+  const resultadoDiv = document.getElementById('resultado');
+  const procedimientoDiv = document.getElementById('procedimiento');
+  const calcularBtn = document.getElementById('calcularBtn');
+  const ctx = document.getElementById('grafica').getContext('2d');
+  let chartInstance = null;
+
+  function limpiarSalida() {
+    resultadoDiv.textContent = '';
+    procedimientoDiv.textContent = '';
+    if (chartInstance) {
+      chartInstance.destroy();
+      chartInstance = null;
+    }
+  }
+
+  function evaluarFuncion(cadena) {
+    return nerdamer(cadena).buildFunction(['x']);
+  }
+
+  function graficar(funcStr, derivStr) {
+    if (chartInstance) {
+      chartInstance.destroy();
+    }
+
+    const fEval = evaluarFuncion(funcStr);
+    const dEval = evaluarFuncion(derivStr);
+
+    const xVals = [];
+    const fVals = [];
+    const dVals = [];
+
+    const minX = -10;
+    const maxX = 10;
+    const steps = 500;
+
+    for (let i = 0; i <= steps; i++) {
+      const x = minX + (maxX - minX) * (i / steps);
+      xVals.push(x.toFixed(2));
+      try {
+        const fVal = fEval(x);
+        fVals.push(isFinite(fVal) ? fVal : null);
+      } catch {
+        fVals.push(null);
+      }
+      try {
+        const dVal = dEval(x);
+        dVals.push(isFinite(dVal) ? dVal : null);
+      } catch {
+        dVals.push(null);
+      }
+    }
+
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: xVals,
+        datasets: [
+          {
+            label: 'f(x)',
+            data: fVals,
+            borderColor: 'royalblue',
+            fill: false,
+            pointRadius: 0,
+            borderWidth: 2,
+          },
+          {
+            label: "f'(x)",
+            data: dVals,
+            borderColor: 'crimson',
+            borderDash: [8, 5],
+            fill: false,
+            pointRadius: 0,
+            borderWidth: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            labels: {
+              font: {
+                size: 14,
+              },
+            },
+          },
+          tooltip: {
+            enabled: true,
+            mode: 'nearest',
+            intersect: false,
+          },
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'x',
+              font: { size: 14, weight: 'bold' },
+            },
+            ticks: {
+              maxTicksLimit: 15,
+              maxRotation: 0,
+              minRotation: 0,
+            },
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'y',
+              font: { size: 14, weight: 'bold' },
+            },
+            suggestedMin: -20,
+            suggestedMax: 20,
+          },
+        },
+      },
+    });
+  }
+
+  function calcularDerivada() {
+    limpiarSalida();
+
+    const expr = funcionInput.value.trim();
+    if (!expr) {
+      resultadoDiv.textContent = 'Por favor, ingresa una función.';
+      return;
+    }
+
+    try {
+      const funcion = nerdamer(expr);
+      const derivada = nerdamer.diff(funcion, 'x').expand();
+
+      resultadoDiv.textContent = derivada.toString();
+
+      const derivadaSinExpandir = nerdamer.diff(funcion, 'x').toString();
+
+      procedimientoDiv.textContent =
+        `Derivada sin expandir:\n${derivadaSinExpandir}\n\nDerivada expandida/simplificada:\n${derivada.toString()}`;
+
+      graficar(expr, derivada.toString());
+    } catch (error) {
+      resultadoDiv.textContent = 'Error: No se pudo procesar la función. Verifica la sintaxis.';
+      procedimientoDiv.textContent = '';
+      if(chartInstance){
+        chartInstance.destroy();
+        chartInstance = null;
+      }
+      console.error(error);
+    }
+  }
+
+  calcularBtn.addEventListener('click', calcularDerivada);
+
+  funcionInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      calcularDerivada();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
