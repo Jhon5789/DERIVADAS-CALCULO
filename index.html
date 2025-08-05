@@ -2,122 +2,104 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Derivadas Paso a Paso</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/nerdamer.core.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/Algebra.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/Calculus.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/Solve.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.1/math.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; background: #f0f0f0; padding: 20px; }
-    textarea, input { width: 100%; padding: 10px; margin-top: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
-    button { padding: 10px 20px; font-size: 1rem; margin-top: 10px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 4px; }
-    h2 { margin-top: 30px; }
-    pre { background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
+    body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; background: #f2f2f2; }
+    textarea, button { width: 100%; padding: 10px; margin-top: 10px; font-size: 16px; }
+    button { background: #007bff; color: white; border: none; cursor: pointer; }
+    pre { background: white; padding: 10px; margin-top: 10px; border: 1px solid #ccc; }
     canvas { margin-top: 30px; max-width: 100%; height: 400px; }
   </style>
 </head>
 <body>
-  <h1>Calculadora de Derivadas con Procedimiento Paso a Paso</h1>
-  <label for="funcion">Introduce una función en x (ejemplo: x^2 + sqrt(x) + 1/x):</label>
-  <textarea id="funcion" placeholder="Ej: x^2 + sqrt(x) + 1/x"></textarea>
-  <button onclick="calcular()">Calcular derivada</button>
 
-  <h2>Derivada Resultante</h2>
+  <h1>Calculadora de Derivadas con Proceso</h1>
+  <label>Escribe una función en x:</label>
+  <textarea id="entrada" placeholder="Ej: x^2 + sqrt(x) + 1/x"></textarea>
+  <button onclick="derivar()">Calcular Derivada</button>
+
+  <h2>Resultado Final</h2>
   <pre id="resultado"></pre>
 
-  <h2>Procedimiento Corto (Reglas aplicadas)</h2>
-  <pre id="procCorto"></pre>
+  <h2>Procedimiento Paso a Paso (explicación simple)</h2>
+  <pre id="pasos"></pre>
 
-  <h2>Procedimiento Largo (Derivada simbólica detallada)</h2>
-  <pre id="procLargo"></pre>
-
-  <h2>Gráfica de f(x) y f'(x)</h2>
-  <canvas id="grafico"></canvas>
+  <h2>Gráfica</h2>
+  <canvas id="grafica"></canvas>
 
   <script>
-    function normalizar(expr) {
-      return expr
-        .replace(/\u221a/g, 'sqrt')
-        .replace(/\bln\b/g, 'log')
-        .replace(/([0-9])([a-zA-Z])/g, '$1*$2')
-        .replace(/([a-zA-Z])([0-9])/g, '$1*$2');
-    }
+    function derivar() {
+      const entrada = document.getElementById("entrada").value;
+      const scope = { x: 1 };
+      let expr;
 
-    function obtenerReglas(expr) {
-      let reglas = [];
-      if (expr.includes('+') || expr.includes('-')) reglas.push('✔ Regla de la suma/resta: (f ± g)\' = f\' ± g\'');
-      if (expr.includes('sqrt')) reglas.push('✔ Derivada de la raíz: d/dx(sqrt(x)) = 1 / (2*sqrt(x))');
-      if (expr.includes('/')) reglas.push('✔ Regla del cociente: (f/g)\' = (f\'g - fg\') / g^2');
-      if (expr.match(/x\^\d+/)) reglas.push('✔ Regla de la potencia: d/dx(x^n) = n*x^(n-1)');
-      if (expr.includes('log')) reglas.push('✔ Logaritmo natural: d/dx(log(x)) = 1/x');
-      if (expr.includes('sin')) reglas.push('✔ d/dx(sin(x)) = cos(x)');
-      if (expr.includes('cos')) reglas.push('✔ d/dx(cos(x)) = -sin(x)');
-      if (expr.includes('tan')) reglas.push('✔ d/dx(tan(x)) = sec^2(x)');
-      return reglas.length ? reglas.join("\n") : 'No se detectaron reglas comunes. Revisa la expresión.';
-    }
-
-    function calcular() {
-      const input = document.getElementById('funcion').value;
-      const expr = normalizar(input);
       try {
-        const derivada = nerdamer(`diff(${expr}, x)`);
-        const derivadaExpandida = derivada.expand().toString();
-
-        document.getElementById('resultado').textContent = derivadaExpandida;
-        document.getElementById('procCorto').textContent = obtenerReglas(expr);
-        document.getElementById('procLargo').textContent = `Aplicamos la derivada:
-
-d/dx(${expr}) = ${derivada.toString()}\n\nSimplificado: ${derivadaExpandida}`;
-
-        graficar(expr, derivadaExpandida);
-      } catch (e) {
-        document.getElementById('resultado').textContent = '❌ Error: Verifica la función ingresada';
-        document.getElementById('procCorto').textContent = '';
-        document.getElementById('procLargo').textContent = '';
-        console.error(e);
+        expr = math.parse(entrada);
+      } catch {
+        document.getElementById("resultado").innerText = "❌ Error en la función.";
+        return;
       }
+
+      const derivada = math.derivative(expr, 'x');
+      const simplificada = math.simplify(derivada);
+
+      document.getElementById("resultado").innerText = simplificada.toString();
+
+      // Procedimiento básico
+      const pasos = `1. Función original: ${entrada}
+2. Aplicamos reglas básicas de derivación.
+3. Derivada sin simplificar: ${derivada.toString()}
+4. Derivada simplificada: ${simplificada.toString()}`;
+
+      document.getElementById("pasos").innerText = pasos;
+
+      graficar(entrada, simplificada.toString());
     }
 
     function graficar(fx, dfx) {
-      const labels = [];
-      const datosFx = [];
-      const datosDfx = [];
-      try {
-        const f = nerdamer(fx).buildFunction(['x']);
-        const df = nerdamer(dfx).buildFunction(['x']);
-        for (let x = -10; x <= 10; x += 0.2) {
-          labels.push(x.toFixed(1));
-          try { datosFx.push(f(x)); } catch { datosFx.push(null); }
-          try { datosDfx.push(df(x)); } catch { datosDfx.push(null); }
+      const labels = [], valoresF = [], valoresDf = [];
+
+      const f = math.compile(fx);
+      const df = math.compile(dfx);
+
+      for (let x = -10; x <= 10; x += 0.5) {
+        labels.push(x.toFixed(1));
+        try {
+          valoresF.push(f.evaluate({ x }));
+        } catch {
+          valoresF.push(null);
         }
-        const ctx = document.getElementById('grafico').getContext('2d');
-        if (window.chart) window.chart.destroy();
-        window.chart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [
-              { label: 'f(x)', data: datosFx, borderColor: 'blue', fill: false },
-              { label: "f'(x)", data: datosDfx, borderColor: 'red', fill: false }
-            ]
-          },
-          options: {
-            responsive: true,
-            interaction: { mode: 'index', intersect: false },
-            stacked: false,
-            plugins: { legend: { position: 'top' } },
-            scales: {
-              x: { title: { display: true, text: 'x' } },
-              y: { title: { display: true, text: 'y' } }
-            }
-          }
-        });
-      } catch (error) {
-        console.error("Error al graficar", error);
+        try {
+          valoresDf.push(df.evaluate({ x }));
+        } catch {
+          valoresDf.push(null);
+        }
       }
+
+      const ctx = document.getElementById('grafica').getContext('2d');
+      if (window.miGrafica) window.miGrafica.destroy();
+
+      window.miGrafica = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'f(x)', data: valoresF, borderColor: 'blue', fill: false },
+            { label: \"f'(x)\", data: valoresDf, borderColor: 'red', fill: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: { title: { display: true, text: 'x' } },
+            y: { title: { display: true, text: 'y' } }
+          }
+        }
+      });
     }
   </script>
+
 </body>
 </html>
