@@ -1,299 +1,114 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Calculadora de Derivadas con Proceso Detallado</title>
-<style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    max-width: 720px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-    background: #f9f9f9;
-    color: #222;
-  }
-  h1, h2 {
-    text-align: center;
-    color: #0a47a1;
-  }
-  label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-  }
-  textarea {
-    width: 100%;
-    height: 60px;
-    font-size: 1.1rem;
-    padding: 0.5rem;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    resize: vertical;
-  }
-  button {
-    display: block;
-    margin: 1rem auto;
-    padding: 0.7rem 2rem;
-    font-size: 1.1rem;
-    background-color: #0a47a1;
-    border: none;
-    border-radius: 6px;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  button:hover {
-    background-color: #073a7a;
-  }
-  #resultado, #procCorto, #procLargo {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 0 8px rgb(0 0 0 / 0.1);
-    padding: 1rem;
-    white-space: pre-wrap;
-    font-family: Consolas, monospace;
-    margin-top: 1rem;
-    min-height: 80px;
-  }
-  .explicacion {
-    background: #eef6ff;
-    border-left: 4px solid #0a47a1;
-    padding: 0.5rem 1rem;
-    margin-top: 0.5rem;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 0.9rem;
-    color: #0a47a1;
-  }
-  canvas {
-    margin-top: 1.5rem;
-    width: 100% !important;
-    max-height: 400px;
-  }
-  footer {
-    margin-top: 2rem;
-    font-size: 0.9rem;
-    color: #666;
-    text-align: center;
-  }
-  code {
-    background-color: #eee;
-    padding: 0 4px;
-    border-radius: 4px;
-    font-family: Consolas, monospace;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Derivadas Paso a Paso</title>
+  <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; background: #f9f9f9; padding: 20px; }
+    textarea, input { width: 100%; padding: 10px; margin-top: 10px; font-size: 1rem; }
+    button { padding: 10px 20px; font-size: 1rem; margin-top: 10px; cursor: pointer; background: #007bff; color: white; border: none; }
+    h2 { margin-top: 30px; }
+    pre { background: #eee; padding: 10px; overflow-x: auto; white-space: pre-wrap; }
+    canvas { margin-top: 30px; max-width: 100%; height: 400px; }
+  </style>
 </head>
 <body>
+  <h1>Calculadora de Derivadas con Procedimiento Paso a Paso</h1>
+  <label for="funcion">Ingresa una función (usa x como variable):</label>
+  <textarea id="funcion" placeholder="Ej: x^2 + sqrt(x) + 1/x"></textarea>
+  <button onclick="calcular()">Calcular derivada</button>
 
-<h1>Calculadora de Derivadas con Proceso Detallado</h1>
+  <h2>Resultado Final:</h2>
+  <pre id="resultado"></pre>
 
-<label for="funcion">Introduce una función en <code>x</code> (ejemplo: <code>x^2 + sqrt(x) + 1/x</code>):</label>
-<textarea id="funcion" placeholder="Escribe tu función aquí..."></textarea>
+  <h2>Procedimiento Paso a Paso:</h2>
+  <pre id="pasos"></pre>
 
-<button id="calcularBtn">Calcular derivada</button>
+  <h2>Gráfica:</h2>
+  <canvas id="grafico"></canvas>
 
-<h2>Derivada Resultante</h2>
-<div id="resultado">La derivada aparecerá aquí...</div>
-
-<h2>Procedimiento Corto (Derivada sin expandir)</h2>
-<div id="procCorto"></div>
-<div class="explicacion">Este es el resultado directo de derivar sin simplificar la expresión. Muestra la forma básica antes de aplicar álgebra.</div>
-
-<h2>Procedimiento Largo (Derivada expandida y simplificada)</h2>
-<div id="procLargo"></div>
-<div class="explicacion">Aquí la derivada está desarrollada y simplificada, mostrando la forma final para cálculo o análisis.</div>
-
-<h2>Gráfica</h2>
-<canvas id="grafica"></canvas>
-
-<footer>Creado con ❤️ usando <a href="https://nerdamer.com/" target="_blank" rel="noopener">Nerdamer</a> y <a href="https://www.chartjs.org/" target="_blank" rel="noopener">Chart.js</a></footer>
-
-<script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/all.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-(() => {
-  const funcionInput = document.getElementById('funcion');
-  const resultadoDiv = document.getElementById('resultado');
-  const procCortoDiv = document.getElementById('procCorto');
-  const procLargoDiv = document.getElementById('procLargo');
-  const calcularBtn = document.getElementById('calcularBtn');
-  const ctx = document.getElementById('grafica').getContext('2d');
-  let chartInstance = null;
-
-  function normalizarEntrada(expr) {
-    return expr
-      .replace(/ln/g, 'log')
-      .replace(/√/g, 'sqrt')
-      .replace(/(\d)([a-zA-Z])/g, '$1*$2')
-      .replace(/([a-zA-Z])(\d)/g, '$1*$2')
-      .replace(/--/g, '+');
-  }
-
-  function limpiarSalida() {
-    resultadoDiv.textContent = '';
-    procCortoDiv.textContent = '';
-    procLargoDiv.textContent = '';
-    if (chartInstance) {
-      chartInstance.destroy();
-      chartInstance = null;
-    }
-  }
-
-  function evaluarFuncion(cadena) {
-    return nerdamer(cadena).buildFunction(['x']);
-  }
-
-  function graficar(funcStr, derivStr) {
-    if (chartInstance) {
-      chartInstance.destroy();
+  <script>
+    function normalizar(expr) {
+      return expr
+        .replace(/\u221a/g, 'sqrt')
+        .replace(/\bln\b/g, 'log')
+        .replace(/([0-9])([a-zA-Z])/g, '$1*$2')
+        .replace(/([a-zA-Z])([0-9])/g, '$1*$2');
     }
 
-    const fEval = evaluarFuncion(funcStr);
-    const dEval = evaluarFuncion(derivStr);
-
-    const xVals = [];
-    const fVals = [];
-    const dVals = [];
-
-    const minX = -10;
-    const maxX = 10;
-    const steps = 500;
-
-    for (let i = 0; i <= steps; i++) {
-      const x = minX + (maxX - minX) * (i / steps);
-      xVals.push(x.toFixed(2));
-      try {
-        const fVal = fEval(x);
-        fVals.push(isFinite(fVal) ? fVal : null);
-      } catch {
-        fVals.push(null);
+    function pasoPaso(expr) {
+      let pasos = [];
+      if (expr.includes('+') || expr.includes('-')) {
+        pasos.push('Aplicamos la regla de suma/resta: (f ± g)' = f' ± g'');
       }
-      try {
-        const dVal = dEval(x);
-        dVals.push(isFinite(dVal) ? dVal : null);
-      } catch {
-        dVals.push(null);
+      if (expr.includes('sqrt')) {
+        pasos.push('Aplicamos la derivada de la raíz: d/dx(sqrt(x)) = 1/(2*sqrt(x))');
       }
-    }
-
-    chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: xVals,
-        datasets: [
-          {
-            label: 'f(x)',
-            data: fVals,
-            borderColor: 'royalblue',
-            fill: false,
-            pointRadius: 0,
-            borderWidth: 2,
-          },
-          {
-            label: "f'(x)",
-            data: dVals,
-            borderColor: 'crimson',
-            borderDash: [8, 5],
-            fill: false,
-            pointRadius: 0,
-            borderWidth: 2,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-          mode: 'index',
-          intersect: false,
-        },
-        plugins: {
-          legend: {
-            labels: {
-              font: {
-                size: 14,
-              },
-            },
-          },
-          tooltip: {
-            enabled: true,
-            mode: 'nearest',
-            intersect: false,
-          },
-        },
-        scales: {
-          x: {
-            title: {
-              display: true,
-              text: 'x',
-              font: { size: 14, weight: 'bold' },
-            },
-            ticks: {
-              maxTicksLimit: 15,
-              maxRotation: 0,
-              minRotation: 0,
-            },
-          },
-          y: {
-            title: {
-              display: true,
-              text: 'y',
-              font: { size: 14, weight: 'bold' },
-            },
-            suggestedMin: -20,
-            suggestedMax: 20,
-          },
-        },
-      },
-    });
-  }
-
-  function calcularDerivada() {
-    limpiarSalida();
-
-    let expr = funcionInput.value.trim();
-    if (!expr) {
-      resultadoDiv.textContent = 'Por favor, ingresa una función.';
-      return;
-    }
-
-    expr = normalizarEntrada(expr);
-
-    try {
-      const funcion = nerdamer(expr);
-
-      const derivadaSinExpandir = nerdamer.diff(funcion, 'x').toString();
-      const derivadaExpandida = nerdamer.diff(funcion, 'x').expand().toString();
-
-      resultadoDiv.textContent = derivadaExpandida;
-      procCortoDiv.textContent = derivadaSinExpandir;
-      procLargoDiv.textContent = derivadaExpandida;
-      
-      graficar(expr, derivadaExpandida);
-    } catch (error) {
-      resultadoDiv.textContent = 'Error: No se pudo procesar la función. Verifica la sintaxis.';
-      procCortoDiv.textContent = '';
-      procLargoDiv.textContent = '';
-      if(chartInstance){
-        chartInstance.destroy();
-        chartInstance = null;
+      if (expr.includes('/')) {
+        pasos.push('Aplicamos la regla del cociente: (f/g)' = (f'g - fg') / g^2');
       }
-      console.error(error);
+      if (expr.match(/x\^\d/)) {
+        pasos.push('Aplicamos la regla de la potencia: d/dx(x^n) = n*x^(n-1)');
+      }
+      if (expr.includes('log')) {
+        pasos.push('Aplicamos la derivada del logaritmo: d/dx(log(x)) = 1/x');
+      }
+      if (expr.includes('sin') || expr.includes('cos') || expr.includes('tan')) {
+        pasos.push('Aplicamos la derivada trigonométrica correspondiente');
+      }
+      return pasos.join("\n");
     }
-  }
 
-  calcularBtn.addEventListener('click', calcularDerivada);
-
-  funcionInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter' && !e.shiftKey){
-      e.preventDefault();
-      calcularDerivada();
+    function calcular() {
+      const input = document.getElementById('funcion').value;
+      const expr = normalizar(input);
+      const derivada = nerdamer.diff(expr, 'x').expand().toString();
+      document.getElementById('resultado').textContent = derivada;
+      document.getElementById('pasos').textContent = pasoPaso(expr);
+      graficar(expr, derivada);
     }
-  });
-})();
-</script>
 
+    function graficar(fx, dfx) {
+      const labels = [];
+      const datosFx = [];
+      const datosDfx = [];
+      const f = nerdamer(fx).buildFunction(['x']);
+      const df = nerdamer(dfx).buildFunction(['x']);
+      for (let x = -10; x <= 10; x += 0.2) {
+        labels.push(x.toFixed(1));
+        try {
+          datosFx.push(f(x));
+        } catch { datosFx.push(null); }
+        try {
+          datosDfx.push(df(x));
+        } catch { datosDfx.push(null); }
+      }
+      const ctx = document.getElementById('grafico').getContext('2d');
+      if (window.chart) window.chart.destroy();
+      window.chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'f(x)', data: datosFx, borderColor: 'blue', fill: false },
+            { label: "f'(x)", data: datosDfx, borderColor: 'red', fill: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          stacked: false,
+          plugins: { legend: { position: 'top' } },
+          scales: {
+            x: { title: { display: true, text: 'x' } },
+            y: { title: { display: true, text: 'y' } }
+          }
+        }
+      });
+    }
+  </script>
 </body>
 </html>
